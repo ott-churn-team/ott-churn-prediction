@@ -19,14 +19,12 @@ if "page" not in st.session_state:
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
-
 # ------------------------------
 # NAVIGATION HELPERS
 # ------------------------------
 def go_to(page):
     st.session_state.page = page
     st.rerun()
-
 
 def check_login(username, password):
     if username == "admin" and password == "1234":
@@ -37,25 +35,31 @@ def check_login(username, password):
     else:
         st.error("❌ Invalid username or password.")
 
-
 # ------------------------------
 # LOAD MODEL & SCALER
 # ------------------------------
 def load_model_and_scaler():
-    model_path = os.path.join("models", "churn_model.pkl")
-    scaler_path = os.path.join("models", "scaler.pkl")
+    model_dir = "models"
+    model_path = os.path.join(model_dir, "churn_model.pkl")
+    scaler_path = os.path.join(model_dir, "scaler.pkl")
+    features_path = os.path.join(model_dir, "features.pkl")
 
-    if not os.path.exists(model_path) or not os.path.exists(scaler_path):
-        st.error("⚠️ Model or Scaler not found! Please train the model first.")
+    # Check if folder or files exist
+    if not os.path.exists(model_dir):
+        st.error(f"⚠️ Folder '{model_dir}' not found! Please make sure the folder is in the repo root.")
+        st.stop()
+    if not os.path.exists(model_path) or not os.path.exists(scaler_path) or not os.path.exists(features_path):
+        st.error("⚠️ Model, Scaler, or Features file not found! Please check your 'models' folder.")
         st.stop()
 
     with open(model_path, "rb") as f:
         model = pickle.load(f)
     with open(scaler_path, "rb") as f:
         scaler = pickle.load(f)
+    with open(features_path, "rb") as f:
+        features = pickle.load(f)
 
-    return model, scaler
-
+    return model, scaler, features
 
 # ------------------------------
 # RETENTION STRATEGY FUNCTION
@@ -70,15 +74,14 @@ def generate_retention_strategy(prob):
     else:
         return "✅ Low risk — Customer seems satisfied. Maintain engagement."
 
-
 # ------------------------------
 # CHURN DASHBOARD FUNCTION
 # ------------------------------
 def churn_dashboard():
     st.title("📊 Customer Churn Prediction Dashboard")
 
-    model, scaler = load_model_and_scaler()
-    st.success("✅ Model and Scaler loaded successfully!")
+    model, scaler, features = load_model_and_scaler()
+    st.success("✅ Model, Scaler, and Features loaded successfully!")
 
     training_features = [
         "gender", "age", "no_of_days_subscribed", "multi_screen", "mail_subscribed",
@@ -249,7 +252,6 @@ def churn_dashboard():
                 ax_fi.set_title("Top Features Impacting Churn")
                 st.pyplot(fig_fi)
 
-
 # ------------------------------
 # PAGE LOGIC
 # ------------------------------
@@ -285,6 +287,7 @@ elif st.session_state.page == "login":
 
 elif st.session_state.page == "dashboard":
     churn_dashboard()
+
 
 
 
